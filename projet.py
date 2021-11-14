@@ -25,6 +25,7 @@ def read_data(filename):
   Y = []
   with open(filename) as csv_file:
       csv_reader = csv.reader(csv_file, delimiter=',')
+      next(csv_reader,None)
       for line in csv_reader:
           X.append(list(map(float,line[:1])))
           Y.append(line[2] == line[0])
