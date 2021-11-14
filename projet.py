@@ -13,7 +13,7 @@ def split_lines(input, seed, output1, output2):
   output1.truncate(0)
   output2 = open(output2,'a')
   output2.truncate(0)
-  for line in open(input, 'r').readlines(): 
+  for line in open(input, 'r').readlines():
       if (random.random() < 0.5):
           write = output1;
       else:
@@ -31,3 +31,18 @@ def read_data(filename):
           Y.append(line[2] == line[0])
 
   return (X,Y);
+
+#Extraire les données du fichier pokemon.csv sans la colonne 'Development stage'
+def read_data_pokemon(filename):
+    X = []
+
+    with open(filename) as csv_file:
+        csv_reader = csv_reader(csv_file, delimiter=',')
+        next(csv_reader,None)
+
+        for line in csv_reader:
+            pokemon = ligne[1:]
+            del pokemon[-2]
+            X.append(pokemon)
+            
+    return X
