@@ -156,4 +156,5 @@ def istypeEffective (type1,type2):
 #typeAttack est un type, tandis que typeDefense est un tableau de type
 def isTypeAdvantage(typeAttack,typeDefense):
     damageMultiplier = 1.0 * istypeEffective(typeAttack,typeDefense[0])
-    return damageMultiplier * istypeEffective(typeAttack,typeDefense[1]) > 1.0 if len(typeDefense) == 2 else damageMultiplier > 1
+    damageMultiplier = damageMultiplier * istypeEffective(typeAttack,typeDefense[1]) > 1.0 if len(typeDefense) == 2 else damageMultiplier > 1
+    return damageMultiplier > 1, damageMultiplier == 0
