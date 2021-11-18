@@ -131,7 +131,6 @@ def read_data_pokemon(filename):
 
     with open(filename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        next(csv_reader,None)
 
         for line in csv_reader:
             pokemon = line[1:]
@@ -139,10 +138,14 @@ def read_data_pokemon(filename):
             X.append(pokemon)
             
     return X
+pokemon = read_data_pokemon('pokemon.csv')
+split_lines('combats.csv',0,'train','test')
+train_x,train_y = read_data('train')
+test_x,test_y = read_data('test')
 #Regarde si le type1 est efficace sur le type2
+#return theMultiplier
 def istypeEffective (type1,type2):
     type = typeTable[type1]
-    
     if type2 in type["x2"]:
         return 2.0
     elif type2 in type["x0.5"]:
@@ -154,7 +157,19 @@ def istypeEffective (type1,type2):
 
 #Regarde si le type à un avantage par rapport au type adverse
 #typeAttack est un type, tandis que typeDefense est un tableau de type
+#return isAdvantage,isImmune
 def isTypeAdvantage(typeAttack,typeDefense):
     damageMultiplier = 1.0 * istypeEffective(typeAttack,typeDefense[0])
-    damageMultiplier = damageMultiplier * istypeEffective(typeAttack,typeDefense[1]) > 1.0 if len(typeDefense) == 2 else damageMultiplier > 1
-    return damageMultiplier > 1, damageMultiplier == 0
+    damageMultiplier = damageMultiplier * (istypeEffective(typeAttack,typeDefense[1]) if (len(typeDefense) == 2) & (typeDefense[1] != '') else 1)
+    return damageMultiplier
+
+def doubleTypeAdvantage(type1,type2):
+    advantage1= isTypeAdvantage(type1[0],type2)
+    advantage2= isTypeAdvantage(type1[1],type2) if (len(type1) > 1) & (type1[1] != '') else 0
+    result = max(advantage1,advantage2)
+    return result > 1, result == 0
+
+def typeBattle(pkm1,pkm2):
+    typePkm1 = pokemon[pkm1][1:3]
+    typePkm2 = pokemon[pkm2][1:3]
+    return doubleTypeAdvantage(typePkm1,typePkm2)
