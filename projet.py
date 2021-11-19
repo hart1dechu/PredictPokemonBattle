@@ -6,6 +6,8 @@ from numpy import sqrt, true_divide
 import random
 import numpy as np
 from sklearn.model_selection import KFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 typeTable = {
     "Steel" : {
@@ -106,21 +108,24 @@ def split_lines(input, seed, output1, output2):
   output1.truncate(0)
   output2 = open(output2,'a')
   output2.truncate(0)
+  avoidHeader = 0
   for line in open(input, 'r').readlines():
-      if (random.random() < 0.5):
-          write = output1;
+      if avoidHeader != 0:
+        if (random.random() < 0.5):
+            write = output1;
+        else:
+            write = output2;
+        write.write(line);
       else:
-          write = output2;
-      write.write(line);
+          avoidHeader+=1
 
 def read_data(filename):
   X = []
   Y = []
   with open(filename) as csv_file:
       csv_reader = csv.reader(csv_file, delimiter=',')
-      next(csv_reader,None)
       for line in csv_reader:
-          X.append(line[:1])
+          X.append(line[:2])
           Y.append(line[2] == line[0])
 
   return (X,Y);
@@ -138,10 +143,6 @@ def read_data_pokemon(filename):
             X.append(pokemon)
             
     return X
-pokemon = read_data_pokemon('pokemon.csv')
-split_lines('combats.csv',0,'train','test')
-train_x,train_y = read_data('train')
-test_x,test_y = read_data('test')
 #Regarde si le type1 est efficace sur le type2
 #return theMultiplier
 def istypeEffective (type1,type2):
@@ -173,3 +174,46 @@ def typeBattle(pkm1,pkm2):
     typePkm1 = pokemon[pkm1][1:3]
     typePkm2 = pokemon[pkm2][1:3]
     return doubleTypeAdvantage(typePkm1,typePkm2)
+
+def tableDecision(train_x,train_y):
+    table_x = []
+    table_y = []
+    for i in range(len(train_x)): 
+        table_x_elt = []
+        advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
+        table_x_elt.append(advantage)
+        table_x_elt.append(immune)
+        table_y.append(train_y[i])
+        table_x.append(table_x_elt)
+    return table_x,table_y
+
+pokemon = read_data_pokemon('pokemon.csv')
+split_lines('combats.csv',0,'train','test')
+train_raw_x,train_raw_y = read_data('train')
+test_raw_x,test_raw_y = read_data('test')
+train_x,train_y = tableDecision(train_raw_x,train_raw_y)
+test_x,test_y = tableDecision(test_raw_x,test_raw_y)
+
+def randomForestClassifier(train_x,train_y,X):
+    """clf = RandomForestClassifier(max_depth=2,random_state=0)"""
+    clf = DecisionTreeClassifier(random_state=0)
+    clf.fit(train_x,train_y)
+    return clf.predict(np.reshape(X,[1,-1]))
+
+def eval_pokemon_battle_prediction(test_x,test_y,classifier):
+    count = 0;
+    for i in range(len(test_x)):
+      if (classifier(test_x[i]) != test_y[i]):
+          count+=1;
+
+    return count/len(test_x)
+
+def test_eval_pokemon_battle():
+    return eval_pokemon_battle_prediction(test_x,test_y,lambda x : randomForestClassifier(train_x,train_y,x))
+
+"""
+dict["has advantage ?"] = advantage
+        dict["is immune ?"] = immune
+        dict["gagné ?"] = train_y[i]
+        """
+
