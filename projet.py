@@ -143,6 +143,11 @@ def read_data_pokemon(filename):
             X.append(pokemon)
 
     return X
+
+pokemon = read_data_pokemon('pokemon.csv')
+split_lines('combats.csv',0,'train','test')
+train_raw_x,train_raw_y = read_data('train')
+test_raw_x,test_raw_y = read_data('test')
 #Regarde si le type1 est efficace sur le type2
 #return theMultiplier
 def istypeEffective (type1,type2):
@@ -175,6 +180,10 @@ def typeBattle(pkm1,pkm2):
     typePkm2 = pokemon[pkm2][1:3]
     return doubleTypeAdvantage(typePkm1,typePkm2)
 
+def sumInTable(tab):
+    count = 0
+    for elt in tab:
+        count += elt
 def tableDecision(train_x,train_y):
     table_x = []
     table_y = []
@@ -183,14 +192,17 @@ def tableDecision(train_x,train_y):
         advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
         table_x_elt.append(advantage)
         table_x_elt.append(immune)
+        pokemon1 = pokemon[int(train_x[i][0])]
+        pokemon2 = pokemon[int(train_x[i][1])]
+        statsp1 = list(map(lambda x:int(x), pokemon1[3:9]))
+        statsp2 = list(map(lambda x: int(x),pokemon2[3:9]))
+        for i in range (len(statsp1)):
+            table_x_elt.append(statsp1[i] > statsp2[i])
+        table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
         table_y.append(train_y[i])
         table_x.append(table_x_elt)
     return table_x,table_y
 
-pokemon = read_data_pokemon('pokemon.csv')
-split_lines('combats.csv',0,'train','test')
-train_raw_x,train_raw_y = read_data('train')
-test_raw_x,test_raw_y = read_data('test')
 train_x,train_y = tableDecision(train_raw_x,train_raw_y)
 test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
