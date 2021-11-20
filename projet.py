@@ -184,6 +184,7 @@ def sumInTable(tab):
     count = 0
     for elt in tab:
         count += elt
+    return count
 def tableDecision(train_x,train_y):
     table_x = []
     table_y = []
@@ -198,7 +199,9 @@ def tableDecision(train_x,train_y):
         statsp2 = list(map(lambda x: int(x),pokemon2[3:9]))
         for i in range (len(statsp1)):
             table_x_elt.append(statsp1[i] > statsp2[i])
+        
         table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
+        
         table_y.append(train_y[i])
         table_x.append(table_x_elt)
     return table_x,table_y
