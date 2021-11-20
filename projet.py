@@ -207,8 +207,7 @@ train_x,train_y = tableDecision(train_raw_x,train_raw_y)
 test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
 def randomForestClassifier(train_x,train_y,X):
-    clf = RandomForestClassifier(max_depth=2,random_state=0)
-    """clf = DecisionTreeClassifier(random_state=0)"""
+    clf = DecisionTreeClassifier(max_depth = 6,random_state=0)
     clf.fit(train_x,train_y)
     return clf.predict(np.reshape(X,[1,-1]))
 
