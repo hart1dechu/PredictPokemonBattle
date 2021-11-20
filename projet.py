@@ -18,7 +18,7 @@ typeTable = {
     "Fighting": {
         "x2" : ["Steel","Ice","Normal","Rock","Dark"],
         "x0.5" : ["Fairy","Bug","Poison","Psychic","Flying"],
-        "x0" : ["Ghost"] 
+        "x0" : ["Ghost"]
     },
     "Dragon": {
         "x2" : ["Dragon"],
@@ -141,7 +141,7 @@ def read_data_pokemon(filename):
             pokemon = line[1:]
             del pokemon[-2]
             X.append(pokemon)
-            
+
     return X
 #Regarde si le type1 est efficace sur le type2
 #return theMultiplier
@@ -178,7 +178,7 @@ def typeBattle(pkm1,pkm2):
 def tableDecision(train_x,train_y):
     table_x = []
     table_y = []
-    for i in range(len(train_x)): 
+    for i in range(len(train_x)):
         table_x_elt = []
         advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
         table_x_elt.append(advantage)
@@ -195,8 +195,8 @@ train_x,train_y = tableDecision(train_raw_x,train_raw_y)
 test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
 def randomForestClassifier(train_x,train_y,X):
-    """clf = RandomForestClassifier(max_depth=2,random_state=0)"""
-    clf = DecisionTreeClassifier(random_state=0)
+    clf = RandomForestClassifier(max_depth=2,random_state=0)
+    """clf = DecisionTreeClassifier(random_state=0)"""
     clf.fit(train_x,train_y)
     return clf.predict(np.reshape(X,[1,-1]))
 
@@ -217,3 +217,33 @@ dict["has advantage ?"] = advantage
         dict["gagné ?"] = train_y[i]
         """
 
+
+#test_eval_pokemon_battle Decision ==> 0.4592106316547914
+#test_eval_pokemon_battle Random ==>
+# Decision : 1 ==> 5 min, k = 2 ==>0.46354624670237426 , k = 5 ==>0.46354624670237426, k = 10 ==> 0.46354624670237426
+# Random : 1 ==> ? min, k = 2 ==>
+def test_cross_validation_pokemon_battle():
+    erreur = 0
+    total = 0
+
+    #Utilisation du KFold pour avoir 5 permutations du fichier train_x et train_y
+    X = np.array(train_x)
+    Y = np.array(train_y)
+    kf = KFold(n_splits=2)
+    kf.get_n_splits(X)
+
+    for train_index, test_index in kf.split(X):
+        #print("TRAIN:", train_index, "TEST:", test_index)
+        X_train, X_test = X[train_index], X[test_index]
+        Y_train, Y_test = Y[train_index], Y[test_index]
+
+        #Parcourir X_test et comparer le resultat obtenu avec untrained_classifier avec la réponse puis calcule le nombre d'eerreur
+        for i in range(len(X_test)) :
+            total +=1
+            if randomForestClassifier(train_x,train_y,X_test[i]) != Y_test[i] :
+                erreur += 1
+        print(erreur)
+    print(erreur)
+    print(total)
+    #Retourne le pourcentage d'erreur
+    return erreur/total
