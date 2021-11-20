@@ -163,28 +163,34 @@ def istypeEffective (type1,type2):
 
 #Regarde si le type à un avantage par rapport au type adverse
 #typeAttack est un type, tandis que typeDefense est un tableau de type
-#return isAdvantage,isImmune
+#return le damageMultiplier
 def isTypeAdvantage(typeAttack,typeDefense):
     damageMultiplier = 1.0 * istypeEffective(typeAttack,typeDefense[0])
     damageMultiplier = damageMultiplier * (istypeEffective(typeAttack,typeDefense[1]) if (len(typeDefense) == 2) & (typeDefense[1] != '') else 1)
     return damageMultiplier
 
+#Permet de savoir si le type d'un pokemon est avantagé ou immunisé face au type d'una utre pokemon
+#type1 et type2 sont des tableaux de type de pokemon
+#return isAdvantaged, isImmune
 def doubleTypeAdvantage(type1,type2):
     advantage1= isTypeAdvantage(type1[0],type2)
     advantage2= isTypeAdvantage(type1[1],type2) if (len(type1) > 1) & (type1[1] != '') else 0
     result = max(advantage1,advantage2)
     return result > 1, result == 0
-
+#Prend deux pokémon, et renvoie le typeAdvantage du pkm1 face au pkm2
 def typeBattle(pkm1,pkm2):
     typePkm1 = pokemon[pkm1][1:3]
     typePkm2 = pokemon[pkm2][1:3]
     return doubleTypeAdvantage(typePkm1,typePkm2)
-
+#fait la somme des elements d'une table
 def sumInTable(tab):
     count = 0
     for elt in tab:
         count += elt
     return count
+#Fonction principale pour le training d'arbre de decision
+#Elle convertit les données des combats, en une table décrivant les situations entre les deux pokémons
+#Exemple: Le type était-il plus avantageux ? Ses stats étaient-ils meilleures ?
 def tableDecision(train_x,train_y):
     table_x = []
     table_y = []
@@ -193,13 +199,14 @@ def tableDecision(train_x,train_y):
         advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
         table_x_elt.append(advantage)
         table_x_elt.append(immune)
+        #Récupération des pokémons vi la table pokémon
         pokemon1 = pokemon[int(train_x[i][0])]
         pokemon2 = pokemon[int(train_x[i][1])]
+        #tableaux des stats des pokémons
         statsp1 = list(map(lambda x:int(x), pokemon1[3:9]))
-        statsp2 = list(map(lambda x: int(x),pokemon2[3:9]))
+        statsp2 = list(map(lambda x:int(x),pokemon2[3:9]))
         for i in range (len(statsp1)):
             table_x_elt.append(statsp1[i] > statsp2[i])
-        
         table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
         
         table_y.append(train_y[i])
@@ -209,11 +216,13 @@ def tableDecision(train_x,train_y):
 train_x,train_y = tableDecision(train_raw_x,train_raw_y)
 test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
+#Fonction pour l'arbre de décision
 def randomForestClassifier(train_x,train_y,X):
     clf = DecisionTreeClassifier(max_depth = 6,random_state=0)
     clf.fit(train_x,train_y)
     return clf.predict(np.reshape(X,[1,-1]))
 
+#Evaluation sur le fichier test
 def eval_pokemon_battle_prediction(test_x,test_y,classifier):
     count = 0;
     for i in range(len(test_x)):
