@@ -205,8 +205,8 @@ def tableDecision(train_x,train_y):
         #tableaux des stats des pokémons
         statsp1 = list(map(lambda x:int(x), pokemon1[3:9]))
         statsp2 = list(map(lambda x:int(x),pokemon2[3:9]))
-        for i in range (len(statsp1)):
-            table_x_elt.append(statsp1[i] > statsp2[i])
+        for j in range (len(statsp1)):
+            table_x_elt.append(statsp1[j] > statsp2[j])
         table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
         
         table_y.append(train_y[i])
