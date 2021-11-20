@@ -20,6 +20,25 @@
   - S'il a de meilleur statistique
 
 
+## Semaine 2
+####Travail :
+- La fonction principale pour le training d'arbre de decision  tableDecision(train_x,train_y), permet de convertir les données des combats, en table décrivant les situations entre les deux pokémons :
+  - table_x est tableau de tableau de boolean contenant les information pour l'arbre de décision : [isAdvantaged, isImmune, HP1>HP2, Attack1>Attack2, Defense1>Defense2, Sp.Atk1>Sp.Stk2, Sp.Df1>Sp.Df2, Speed1>Speed2, SommeStat1>SommeStat2]
+  - table_y est le tableau des résultats
+- Des tests simple avec la méthode test_eval_pokemon_battle() utilisant DecisionTreeClassifier
+  - Les premiers test :  
+      - max_depth = 2 , 0.4592106316547914 en environ 15 minutes (environ 11 minutes)
+- Des tests avec la méthode est_cross_validation_pokemon_battle() utilisant KFold et DecisionTreeClassifier
+  - Les premiers test avec max_depth=2
+    - k = 5, 0.46354624670237426
+    - k = 10,  0.46354624670237426
+  - Les derniers test avec max_depth=6 et ajout des statistiques des pokemons:
+    - k = 6, 0.05... (environ 15 minutes)
+
+#### A voir:
+  - Fonction pour trouver le best k pour max_depth
+  - Implémenter quelques questions en plus pour l'arbre de décision
+
 
 
 >Mémo : pas oublier de commenter le code
