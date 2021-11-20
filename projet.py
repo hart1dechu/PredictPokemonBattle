@@ -265,8 +265,8 @@ test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
 
 #Fonction pour l'arbre de décision
-def eval_DecisionTreeClassifier(train_x,train_y,X):
-    clf = DecisionTreeClassifier(max_depth = 6,random_state=0)
+def eval_DecisionTreeClassifier(train_x,train_y,X,k):
+    clf = DecisionTreeClassifier(max_depth = k,random_state=0)
     clf.fit(train_x,train_y)
     return clf.predict(np.reshape(X,[1,-1]))
 
@@ -289,13 +289,13 @@ def test_eval_pokemon_battle():
 
 # Decision : 1 ==> 5 min, k = 2 ==>0.46354624670237426 , k = 5 ==>0.46354624670237426, k = 10 ==> 0.46354624670237426
 ##Retourne le pourcentage d'erreur avec la méthode KFold
-def test_cross_validation_pokemon_battle():
+def test_cross_validation_pokemon_battle(k):
     erreur = 0  #nombre d'erreur lors de l'apprentissage
     total = 0   #nombre total d'apprentissage
 
     X = np.array(train_x)
     Y = np.array(train_y)
-    kf = KFold(n_splits=2)
+    kf = KFold(n_splits=5)
     kf.get_n_splits(X)
 
     for train_index, test_index in kf.split(X):
@@ -305,10 +305,52 @@ def test_cross_validation_pokemon_battle():
         #Parcourir X_test et comparer le resultat obtenu avec la bonne réponse puis calcule le nombre d'eerreur
         for i in range(len(X_test)) :
             total +=1
-            if randomForestClassifier(train_x,train_y,X_test[i]) != Y_test[i] :
+            if eval_DecisionTreeClassifier(train_x,train_y,X_test[i],k) != Y_test[i] :
                 erreur += 1
-        print(erreur)
-    print(erreur)
-    print(total)
 
+    print(k)
     return erreur/total
+
+
+
+def sampled_range(mini, maxi, num):
+  if not num:
+    return []
+  lmini = math.log(mini)
+  lmaxi = math.log(maxi)
+  ldelta = (lmaxi - lmini) / (num - 1)
+  out = [x for x in set([int(math.exp(lmini + i * ldelta)) for i in range(num)])]
+  out.sort()
+  return out
+
+
+def test_find_best_k():
+    k = sampled_range(1, len(train_x), 10) #On pioche 10 valeurs entre 1 et len(train_x)
+    print(k)
+
+    min_list = []   #liste de tous les valeurs de cross_validation
+    min_indice = 0  #indice de la plus petit valeur
+
+    #Calculer le pourcentage d'erreur en fonction de k
+    for val in k:
+        val = test_cross_validation_pokemon_battle(val)
+        print(val)
+        min_list.append(val)
+
+    min_list = np.array(min_list)   #Transformer la liste en array
+
+    #Retourne le meileur K ,celui qui renvoie la plus petit erreur
+    return k[np.argmin(min_list)]
+
+"""question en plus pour arbre de décision
+    - attaque1 > defense2
+    - attaqueSpe1 > defenseSpe2
+    - attaque2 < defense1
+    - attaqueSpe2 < defenseSpe1
+    - bonus si premier à attaquer ??
+
+Test : [1, 3, 9, 29, 90, 277, 855, 2635, 8120, 25018] avec split = 5
+    k = 1 => 0.06055639939243745
+    k = 3 => 0.056759133423934766
+    k = 9, 29, 90, 277, 855 , 2635 => 0.056599248541050445
+"""
