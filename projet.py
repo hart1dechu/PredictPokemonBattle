@@ -249,6 +249,15 @@ def tableDecision(train_x,train_y):
             table_x_elt.append(statsp1[j] > statsp2[j])
         table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
 
+        # attaque1 > defense2
+        table_x_elt.append(statsp1[1] > statsp2[2])
+        #attaque2 < defense1
+        table_x_elt.append(statsp2[1] < statsp1[2])
+        #attaqueSp1 > defenseSpe2
+        table_x_elt.append(statsp1[3] > statsp2[4])
+        #attaqueSpe2 < defenseSpe1
+        table_x_elt.append(statsp2[3] < statsp1[4])
+
         table_y.append(train_y[i])
         table_x.append(table_x_elt)
 
@@ -343,14 +352,14 @@ def test_find_best_k():
     return k[np.argmin(min_list)]
 
 """question en plus pour arbre de décision
-    - attaque1 > defense2
-    - attaqueSpe1 > defenseSpe2
-    - attaque2 < defense1
-    - attaqueSpe2 < defenseSpe1
     - bonus si premier à attaquer ??
 
 Test : [1, 3, 9, 29, 90, 277, 855, 2635, 8120, 25018] avec split = 5
     k = 1 => 0.06055639939243745
     k = 3 => 0.056759133423934766
     k = 9, 29, 90, 277, 855 , 2635 => 0.056599248541050445
+Test : [1, 3, 9, 29, 90, 277, 855, 2635, 8120, 25018] avec split = 5 et nouvelle stats
+    k = 1 => 0.06055639939243745
+    k = 3 => 0.056759133423934766
+    k = 9 => 0.05603965145095531
 """
