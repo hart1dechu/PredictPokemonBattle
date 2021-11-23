@@ -113,7 +113,7 @@ def split_lines(input, seed, output1, output2):
 
   for line in open(input, 'r').readlines():
       if avoidHeader != 0:
-        if (random.random() < 0.5):
+        if (random.random() < 0.8):
             write = output1;
         else:
             write = output2;
@@ -137,25 +137,6 @@ def read_data(filename):
 
   return (X,Y);
 
-
-#Extraire les données d'un fichier (pokemon.csv)
-#X est un tableau contenant tous les colonnes du fichier sauf la colonne 'Development stage'
-def read_data_pokemon(filename):
-    X = []
-
-    with open(filename) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        for line in csv_reader:
-            pokemon = line[1:]
-            del pokemon[-2]
-            X.append(pokemon)
-
-    return X
-
-
-#Tableau pokemon contenant les caractéristiques des pokémons
-pokemon = read_data_pokemon('pokemon.csv')
-
 #Diviser le fichier combats.csv en fichier train et test
 split_lines('combats.csv',0,'train','test')
 
@@ -167,6 +148,64 @@ train_raw_x,train_raw_y = read_data('train')
 #test_raw_y est un tableau de boolean qui indique si le 1er pokémon est le gagnant pour le test
 test_raw_x,test_raw_y = read_data('test')
 
+def winrate(pkm,allBattle,allBattleVictory):
+    pkm = str(pkm) if type(pkm) == int else pkm
+    count = 0
+    win = 0
+    for i in range(len(allBattle)):
+        if pkm in allBattle[i][0]: 
+            if allBattleVictory[i]:
+                win+=1
+            count+=1
+        elif pkm in allBattle[i][1]:
+            if not allBattleVictory[i]:
+                win+=1
+            count+=1
+    if count == 0 :return 0.0
+    return win/count
+
+#Extraire les données d'un fichier (pokemon.csv)
+#X est un tableau contenant tous les colonnes du fichier sauf la colonne 'Development stage'
+def read_data_pokemon(filename):
+    X = []
+
+    with open(filename) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        next(csv_reader,None)
+        X.append([])
+        for line in csv_reader:
+            pokemon = line[1:]
+            del pokemon[-2]
+            pokemon.append(winrate(line[0],train_raw_x,train_raw_y))
+            X.append(pokemon)
+
+    return X
+
+#Tableau pokemon contenant les caractéristiques des pokémons
+pokemon = read_data_pokemon('pokemon.csv')
+def getPokemonName(pkm):
+    return pokemon[int(pkm)][0]
+def isGhost(pkm):
+    if 'Ghost' in (pokemon[int(pkm)][1:3]):
+        return True
+    return False
+def isFighting(pkm):
+    if 'Fighting' in (pokemon[int(pkm)][1:3]):
+        return True
+    return False
+def battleAnalyzing():
+    allBatlle = []
+    for i in range(len(train_raw_x)):
+        x = []
+        pkm1 = train_raw_x[i][0]
+        pkm2 = train_raw_x[i][1]
+        if (isGhost(pkm1) and isFighting(pkm2)) or (isGhost(pkm2) and isFighting(pkm1)):
+            x.append(getPokemonName(pkm1))
+            x.append(getPokemonName(pkm2))
+            x.append(train_raw_y[i])
+        if (len(x) != 0):
+            allBatlle.append(x)
+    return allBatlle
 
 #Retourne le coefficient d'efficacité du type1 sur le type2 d'après le typeTable
 # 2.0, si le type1 est super efficace sur le type2
@@ -208,8 +247,9 @@ def doubleTypeAdvantage(type1,type2):
 def typeBattle(pkm1,pkm2):
     typePkm1 = pokemon[pkm1][1:3]   #tableau des types du pokemon1
     typePkm2 = pokemon[pkm2][1:3]   #tableau des types du pokemon2
-    result = doubleTypeAdvantage(typePkm1,typePkm2) 
-    return result > 1, result == 0
+    """result = doubleTypeAdvantage(typePkm1,typePkm2) 
+    return result > 1, result == 0"""
+    return doubleTypeAdvantage(typePkm1,typePkm2)
 
 
 #Faire la somme des elements d'une table
@@ -276,14 +316,16 @@ def tableDecision(train_x,train_y):
         table_x_elt = []
 
         #Ajouter les boolean (isAdvantaged, isImmune)
-        advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
+        """advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
         table_x_elt.append(advantage)
-        table_x_elt.append(immune)
+        table_x_elt.append(immune)"""
+        damageMultiplier = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
+        table_x_elt.append(damageMultiplier)
 
         #Récupération des données des pokémons via la table pokémon
         pokemon1 = pokemon[int(train_x[i][0])]
         pokemon2 = pokemon[int(train_x[i][1])]
-
+        
         #Tableaux des stats des pokémons
         statsp1 = getBaseStats(pokemon1)
         statsp2 = getBaseStats(pokemon2)
@@ -292,7 +334,8 @@ def tableDecision(train_x,train_y):
         #True si les stats du pkm1 sont supérieur au pkm2
         for j in range (len(statsp1)):
             table_x_elt.append(statsp1[j] > statsp2[j])
-        table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
+        table_x_elt.append(sumInTable(statsp1))
+        table_x_elt.append(sumInTable(statsp2))
 
         """# attaque1 > defense2
         table_x_elt.append(statsp1[1] > statsp2[2])
@@ -304,7 +347,10 @@ def tableDecision(train_x,train_y):
         table_x_elt.append(statsp2[3] < statsp1[4])"""
         naiveBattleSimulator = battleSimulation(pokemon1,pokemon2)
         table_x_elt.append(naiveBattleSimulator)
-
+        winRatepkm1 = pokemon1[-1]
+        winRatepkm2 = pokemon2[-1]
+        table_x_elt.append(winRatepkm1)
+        table_x_elt.append(winRatepkm2)
         table_y.append(train_y[i])
         table_x.append(table_x_elt)
 
@@ -321,10 +367,10 @@ test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
 
 #Fonction pour l'arbre de décision
-def eval_DecisionTreeClassifier(train_x,train_y,X,k):
-    clf = DecisionTreeClassifier(max_depth = k,random_state=0)
+def eval_DecisionTreeClassifier(train_x,train_y,X,y,k):
+    clf = RandomForestClassifier()
     clf.fit(train_x,train_y)
-    return clf.predict(np.reshape(X,[1,-1]))
+    return clf.score(X,y)
 
 
 #Evaluation sur le fichier test
@@ -348,10 +394,10 @@ def test_eval_pokemon_battle():
 def test_cross_validation_pokemon_battle(k):
     erreur = 0  #nombre d'erreur lors de l'apprentissage
     total = 0   #nombre total d'apprentissage
-
+    meanSum = 0
     X = np.array(train_x)
     Y = np.array(train_y)
-    kf = KFold(n_splits=1)
+    kf = KFold(n_splits=10)
     kf.get_n_splits(X)
 
     for train_index, test_index in kf.split(X):
@@ -359,13 +405,15 @@ def test_cross_validation_pokemon_battle(k):
         Y_train, Y_test = Y[train_index], Y[test_index]
 
         #Parcourir X_test et comparer le resultat obtenu avec la bonne réponse puis calcule le nombre d'eerreur
-        for i in range(len(X_test)) :
+        """for i in range(len(X_test)) :
             total +=1
             if eval_DecisionTreeClassifier(train_x,train_y,X_test[i],k) != Y_test[i] :
-                erreur += 1
+                erreur += 1"""
+        meanSum += round(eval_DecisionTreeClassifier(X_train,Y_train,X_test,Y_test,5) * 100,2)
+        total+=1
 
     print(k)
-    return erreur/total
+    return meanSum/total
 
 
 
