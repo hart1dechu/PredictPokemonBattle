@@ -201,14 +201,15 @@ def doubleTypeAdvantage(type1,type2):
     advantage1= isTypeAdvantage(type1[0],type2)
     advantage2= isTypeAdvantage(type1[1],type2) if (len(type1) > 1) & (type1[1] != '') else 0
     result = max(advantage1,advantage2)
-    return result > 1, result == 0
+    return result
 
 
 #Renvoie des boolean (isAdvantaged, isImmune) permet de savoir si le pkm1 est un TypeAdvantage face au pkm2,
 def typeBattle(pkm1,pkm2):
     typePkm1 = pokemon[pkm1][1:3]   #tableau des types du pokemon1
     typePkm2 = pokemon[pkm2][1:3]   #tableau des types du pokemon2
-    return doubleTypeAdvantage(typePkm1,typePkm2)
+    result = doubleTypeAdvantage(typePkm1,typePkm2) 
+    return result > 1, result == 0
 
 
 #Faire la somme des elements d'une table
@@ -217,6 +218,50 @@ def sumInTable(tab):
     for elt in tab:
         count += elt
     return count
+
+#Renvoie les stats de base du pokémon
+def getBaseStats(pkm):
+    return list(map(lambda x:int(x), pkm[3:9]))
+#Formule pour avoir la stat d'HP selon le level 50, et IV 31 EV 0
+def HP(hp):
+    return math.floor(0.01 * (2.0 * hp + 31) * 50) + 50 + 10
+#Formule pour avoir les autres stats selon le level 50, IV 31 EV 0 Nature Neutre
+def otherStat(stat):
+    return math.floor((((2.0*stat + 31) * 50)/ 100) +5) 
+#Renvoie les stats d'un pokémon au niv 50, IV 50 EV 0 Nature Neutre
+def getStats(baseStat):
+    stats = []
+    stats.append(HP(baseStat[0]))
+    for i in baseStat[1:7]:
+        stats.append(otherStat(i))
+    return stats
+def damageCalculator(atkStat,defStat):
+    return ((((2*50)/5) * 40 * (atkStat/defStat)) /50) +2
+
+def supposedDamageDealt(pkm1,pkm2):
+    atkPkm1 = damageCalculator(pkm1[1],pkm2[2])
+    atkSpePkm1 = damageCalculator(pkm1[3],pkm2[4])
+    atkPkm2 = damageCalculator(pkm2[1],pkm1[2])
+    atkSpePkm2 = damageCalculator(pkm2[3],pkm1[4])
+    return max(atkPkm1,atkSpePkm1),max(atkPkm2,atkSpePkm2)
+
+#Fait une simulation naive d'un combat entre deux pokémon, avec une attaque qui fait 40 de degats
+#Renvoie le gagnant
+def battleSimulation(pkm1,pkm2):
+    statsPokemon1 = getStats(getBaseStats(pkm1))
+    statsPokemon2 = getStats(getBaseStats(pkm2))
+    hp1 = int(statsPokemon1[0])
+    hp2 = int(statsPokemon2[0])
+    damagePkm1,damagePkm2 = supposedDamageDealt(statsPokemon1,statsPokemon2)
+    damagePkm1 *= doubleTypeAdvantage(pkm1[1:3],pkm2[1:3])
+    damagePkm2 *= doubleTypeAdvantage(pkm2[1:3],pkm1[1:3])
+    if damagePkm2 == 0:
+        return True
+    if damagePkm1 == 0:
+        return False
+    result1 = math.ceil(hp2/damagePkm1)
+    result2 = math.ceil(hp1/damagePkm2)
+    return result1 <= result2 if statsPokemon1[5] > statsPokemon2[5] else not(result2 <= result1)
 
 
 #Fonction principale pour le training d'arbre de decision
@@ -240,8 +285,8 @@ def tableDecision(train_x,train_y):
         pokemon2 = pokemon[int(train_x[i][1])]
 
         #Tableaux des stats des pokémons
-        statsp1 = list(map(lambda x:int(x), pokemon1[3:9]))
-        statsp2 = list(map(lambda x:int(x),pokemon2[3:9]))
+        statsp1 = getBaseStats(pokemon1)
+        statsp2 = getBaseStats(pokemon2)
 
         #On compare les statistiques et la somme des statistiques des pokemon entre eux
         #True si les stats du pkm1 sont supérieur au pkm2
@@ -249,14 +294,16 @@ def tableDecision(train_x,train_y):
             table_x_elt.append(statsp1[j] > statsp2[j])
         table_x_elt.append(sumInTable(statsp1) > sumInTable(statsp2))
 
-        # attaque1 > defense2
+        """# attaque1 > defense2
         table_x_elt.append(statsp1[1] > statsp2[2])
         #attaque2 < defense1
         table_x_elt.append(statsp2[1] < statsp1[2])
         #attaqueSp1 > defenseSpe2
         table_x_elt.append(statsp1[3] > statsp2[4])
         #attaqueSpe2 < defenseSpe1
-        table_x_elt.append(statsp2[3] < statsp1[4])
+        table_x_elt.append(statsp2[3] < statsp1[4])"""
+        naiveBattleSimulator = battleSimulation(pokemon1,pokemon2)
+        table_x_elt.append(naiveBattleSimulator)
 
         table_y.append(train_y[i])
         table_x.append(table_x_elt)
@@ -304,7 +351,7 @@ def test_cross_validation_pokemon_battle(k):
 
     X = np.array(train_x)
     Y = np.array(train_y)
-    kf = KFold(n_splits=5)
+    kf = KFold(n_splits=1)
     kf.get_n_splits(X)
 
     for train_index, test_index in kf.split(X):
