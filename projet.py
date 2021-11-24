@@ -153,7 +153,7 @@ def winrate(pkm,allBattle,allBattleVictory):
     count = 0
     win = 0
     for i in range(len(allBattle)):
-        if pkm in allBattle[i][0]: 
+        if pkm in allBattle[i][0]:
             if allBattleVictory[i]:
                 win+=1
             count+=1
@@ -247,7 +247,7 @@ def doubleTypeAdvantage(type1,type2):
 def typeBattle(pkm1,pkm2):
     typePkm1 = pokemon[pkm1][1:3]   #tableau des types du pokemon1
     typePkm2 = pokemon[pkm2][1:3]   #tableau des types du pokemon2
-    """result = doubleTypeAdvantage(typePkm1,typePkm2) 
+    """result = doubleTypeAdvantage(typePkm1,typePkm2)
     return result > 1, result == 0"""
     return doubleTypeAdvantage(typePkm1,typePkm2)
 
@@ -262,12 +262,18 @@ def sumInTable(tab):
 #Renvoie les stats de base du pokémon
 def getBaseStats(pkm):
     return list(map(lambda x:int(x), pkm[3:9]))
+
+
 #Formule pour avoir la stat d'HP selon le level 50, et IV 31 EV 0
 def HP(hp):
     return math.floor(0.01 * (2.0 * hp + 31) * 50) + 50 + 10
+
+
 #Formule pour avoir les autres stats selon le level 50, IV 31 EV 0 Nature Neutre
 def otherStat(stat):
-    return math.floor((((2.0*stat + 31) * 50)/ 100) +5) 
+    return math.floor((((2.0*stat + 31) * 50)/ 100) +5)
+
+
 #Renvoie les stats d'un pokémon au niv 50, IV 50 EV 0 Nature Neutre
 def getStats(baseStat):
     stats = []
@@ -275,8 +281,11 @@ def getStats(baseStat):
     for i in baseStat[1:7]:
         stats.append(otherStat(i))
     return stats
+
+
 def damageCalculator(atkStat,defStat):
     return ((((2*50)/5) * 40 * (atkStat/defStat)) /50) +2
+
 
 def supposedDamageDealt(pkm1,pkm2):
     atkPkm1 = damageCalculator(pkm1[1],pkm2[2])
@@ -284,6 +293,7 @@ def supposedDamageDealt(pkm1,pkm2):
     atkPkm2 = damageCalculator(pkm2[1],pkm1[2])
     atkSpePkm2 = damageCalculator(pkm2[3],pkm1[4])
     return max(atkPkm1,atkSpePkm1),max(atkPkm2,atkSpePkm2)
+
 
 #Fait une simulation naive d'un combat entre deux pokémon, avec une attaque qui fait 40 de degats
 #Renvoie le gagnant
@@ -325,7 +335,7 @@ def tableDecision(train_x,train_y):
         #Récupération des données des pokémons via la table pokémon
         pokemon1 = pokemon[int(train_x[i][0])]
         pokemon2 = pokemon[int(train_x[i][1])]
-        
+
         #Tableaux des stats des pokémons
         statsp1 = getBaseStats(pokemon1)
         statsp2 = getBaseStats(pokemon2)
@@ -389,7 +399,6 @@ def test_eval_pokemon_battle():
     return eval_pokemon_battle_prediction(test_x,test_y,lambda x : eval_DecisionTreeClassifier(train_x,train_y,x))
 
 
-# Decision : 1 ==> 5 min, k = 2 ==>0.46354624670237426 , k = 5 ==>0.46354624670237426, k = 10 ==> 0.46354624670237426
 ##Retourne le pourcentage d'erreur avec la méthode KFold
 def test_cross_validation_pokemon_battle(k):
     total = 0   #nombre total d'apprentissage
@@ -432,17 +441,3 @@ def test_find_best_k():
 
     #Retourne le meileur K ,celui qui renvoie la plus petit erreur
     return k[np.argmax(min_list)]
-
-"""question en plus pour arbre de décision
-    - bonus si premier à attaquer ??
-
-Test : [1, 3, 9, 29, 90, 277, 855, 2635, 8120, 25018] avec split = 5
-    k = 1 => 0.06055639939243745
-    k = 3 => 0.056759133423934766
-    k = 9, 29, 90, 277, 855 , 2635 => 0.056599248541050445
-Test : [1, 3, 9, 29, 90, 277, 855, 2635, 8120, 25018] avec split = 5 et nouvelle stats
-    k = 1 =>  0.06055639939243745
-    k = 3 =>  0.056759133423934766
-    k = 9 =>  0.05603965145095531
-    k = 29, 90, 277 => 0.05468062994643856
-"""
