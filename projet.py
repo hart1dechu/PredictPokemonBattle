@@ -334,6 +334,8 @@ def tableDecision(train_x,train_y):
         #True si les stats du pkm1 sont supérieur au pkm2
         for j in range (len(statsp1)):
             table_x_elt.append(statsp1[j] > statsp2[j])
+        table_x_elt.append(statsp1[5])
+        table_x_elt.append(statsp2[5])
         table_x_elt.append(sumInTable(statsp1))
         table_x_elt.append(sumInTable(statsp2))
 
@@ -345,8 +347,6 @@ def tableDecision(train_x,train_y):
         table_x_elt.append(statsp1[3] > statsp2[4])
         #attaqueSpe2 < defenseSpe1
         table_x_elt.append(statsp2[3] < statsp1[4])"""
-        naiveBattleSimulator = battleSimulation(pokemon1,pokemon2)
-        table_x_elt.append(naiveBattleSimulator)
         winRatepkm1 = pokemon1[-1]
         winRatepkm2 = pokemon2[-1]
         table_x_elt.append(winRatepkm1)
@@ -368,7 +368,7 @@ test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
 #Fonction pour l'arbre de décision
 def eval_DecisionTreeClassifier(train_x,train_y,X,y,k):
-    clf = RandomForestClassifier()
+    clf = RandomForestClassifier(n_estimators=250, criterion="entropy")
     clf.fit(train_x,train_y)
     return clf.score(X,y)
 
@@ -392,30 +392,17 @@ def test_eval_pokemon_battle():
 # Decision : 1 ==> 5 min, k = 2 ==>0.46354624670237426 , k = 5 ==>0.46354624670237426, k = 10 ==> 0.46354624670237426
 ##Retourne le pourcentage d'erreur avec la méthode KFold
 def test_cross_validation_pokemon_battle(k):
-    erreur = 0  #nombre d'erreur lors de l'apprentissage
     total = 0   #nombre total d'apprentissage
     meanSum = 0
     X = np.array(train_x)
     Y = np.array(train_y)
     kf = KFold(n_splits=10)
-    kf.get_n_splits(X)
-
     for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         Y_train, Y_test = Y[train_index], Y[test_index]
-
-        #Parcourir X_test et comparer le resultat obtenu avec la bonne réponse puis calcule le nombre d'eerreur
-        """for i in range(len(X_test)) :
-            total +=1
-            if eval_DecisionTreeClassifier(train_x,train_y,X_test[i],k) != Y_test[i] :
-                erreur += 1"""
-        meanSum += round(eval_DecisionTreeClassifier(X_train,Y_train,X_test,Y_test,5) * 100,2)
+        meanSum += round(eval_DecisionTreeClassifier(X_train,Y_train,X_test,Y_test,k) * 100,2)
         total+=1
-
-    print(k)
     return meanSum/total
-
-
 
 def sampled_range(mini, maxi, num):
   if not num:
@@ -429,7 +416,7 @@ def sampled_range(mini, maxi, num):
 
 
 def test_find_best_k():
-    k = sampled_range(1, len(train_x), 10) #On pioche 10 valeurs entre 1 et len(train_x)
+    k = [100,150,200,250,300,350,400] #On pioche 10 valeurs entre 1 et len(train_x)
     print(k)
 
     min_list = []   #liste de tous les valeurs de cross_validation
@@ -444,7 +431,7 @@ def test_find_best_k():
     min_list = np.array(min_list)   #Transformer la liste en array
 
     #Retourne le meileur K ,celui qui renvoie la plus petit erreur
-    return k[np.argmin(min_list)]
+    return k[np.argmax(min_list)]
 
 """question en plus pour arbre de décision
     - bonus si premier à attaquer ??
