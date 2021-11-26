@@ -132,7 +132,7 @@ def read_data(filename):
   with open(filename) as csv_file:
       csv_reader = csv.reader(csv_file, delimiter=',')
       for line in csv_reader:
-          X.append(line[:2])
+          X.append(list(map(int,line[:2])))
           Y.append(line[2] == line[0])
 
   return (X,Y);
@@ -149,15 +149,15 @@ train_raw_x,train_raw_y = read_data('train')
 test_raw_x,test_raw_y = read_data('test')
 
 def winrate(pkm,allBattle,allBattleVictory):
-    pkm = str(pkm) if type(pkm) == int else pkm
+    pkm = int(pkm) if type(pkm) == str else pkm
     count = 0
     win = 0
     for i in range(len(allBattle)):
-        if pkm in allBattle[i][0]:
+        if pkm == allBattle[i][0]:
             if allBattleVictory[i]:
                 win+=1
             count+=1
-        elif pkm in allBattle[i][1]:
+        elif pkm == allBattle[i][1]:
             if not allBattleVictory[i]:
                 win+=1
             count+=1
@@ -184,28 +184,7 @@ def read_data_pokemon(filename):
 #Tableau pokemon contenant les caractéristiques des pokémons
 pokemon = read_data_pokemon('pokemon.csv')
 def getPokemonName(pkm):
-    return pokemon[int(pkm)][0]
-def isGhost(pkm):
-    if 'Ghost' in (pokemon[int(pkm)][1:3]):
-        return True
-    return False
-def isFighting(pkm):
-    if 'Fighting' in (pokemon[int(pkm)][1:3]):
-        return True
-    return False
-def battleAnalyzing():
-    allBatlle = []
-    for i in range(len(train_raw_x)):
-        x = []
-        pkm1 = train_raw_x[i][0]
-        pkm2 = train_raw_x[i][1]
-        if (isGhost(pkm1) and isFighting(pkm2)) or (isGhost(pkm2) and isFighting(pkm1)):
-            x.append(getPokemonName(pkm1))
-            x.append(getPokemonName(pkm2))
-            x.append(train_raw_y[i])
-        if (len(x) != 0):
-            allBatlle.append(x)
-    return allBatlle
+    return pokemon[pkm][0]
 
 #Retourne le coefficient d'efficacité du type1 sur le type2 d'après le typeTable
 # 2.0, si le type1 est super efficace sur le type2
@@ -247,8 +226,6 @@ def doubleTypeAdvantage(type1,type2):
 def typeBattle(pkm1,pkm2):
     typePkm1 = pokemon[pkm1][1:3]   #tableau des types du pokemon1
     typePkm2 = pokemon[pkm2][1:3]   #tableau des types du pokemon2
-    """result = doubleTypeAdvantage(typePkm1,typePkm2)
-    return result > 1, result == 0"""
     return doubleTypeAdvantage(typePkm1,typePkm2)
 
 
@@ -282,38 +259,6 @@ def getStats(baseStat):
         stats.append(otherStat(i))
     return stats
 
-
-def damageCalculator(atkStat,defStat):
-    return ((((2*50)/5) * 40 * (atkStat/defStat)) /50) +2
-
-
-def supposedDamageDealt(pkm1,pkm2):
-    atkPkm1 = damageCalculator(pkm1[1],pkm2[2])
-    atkSpePkm1 = damageCalculator(pkm1[3],pkm2[4])
-    atkPkm2 = damageCalculator(pkm2[1],pkm1[2])
-    atkSpePkm2 = damageCalculator(pkm2[3],pkm1[4])
-    return max(atkPkm1,atkSpePkm1),max(atkPkm2,atkSpePkm2)
-
-
-#Fait une simulation naive d'un combat entre deux pokémon, avec une attaque qui fait 40 de degats
-#Renvoie le gagnant
-def battleSimulation(pkm1,pkm2):
-    statsPokemon1 = getStats(getBaseStats(pkm1))
-    statsPokemon2 = getStats(getBaseStats(pkm2))
-    hp1 = int(statsPokemon1[0])
-    hp2 = int(statsPokemon2[0])
-    damagePkm1,damagePkm2 = supposedDamageDealt(statsPokemon1,statsPokemon2)
-    damagePkm1 *= doubleTypeAdvantage(pkm1[1:3],pkm2[1:3])
-    damagePkm2 *= doubleTypeAdvantage(pkm2[1:3],pkm1[1:3])
-    if damagePkm2 == 0:
-        return True
-    if damagePkm1 == 0:
-        return False
-    result1 = math.ceil(hp2/damagePkm1)
-    result2 = math.ceil(hp1/damagePkm2)
-    return result1 <= result2 if statsPokemon1[5] > statsPokemon2[5] else not(result2 <= result1)
-
-
 #Fonction principale pour le training d'arbre de decision
 #Elle convertit les données des combats, en une table décrivant les situations entre les deux pokémons
 #Exemple: Le type était-il plus avantageux ? Ses stats étaient-ils meilleures ?
@@ -325,38 +270,30 @@ def tableDecision(train_x,train_y):
         # tableau = [isAdvantaged,isImmune,HP1 > HP2,Attack1 > Attack2,Defense1 > Defense2,Sp.Atk1 > Sp.Stk2, Sp.Df1 > Sp.Df2,Speed1 > Speed2, SommeStat1 > SommeStat2]
         table_x_elt = []
 
-        #Ajouter les boolean (isAdvantaged, isImmune)
-        """advantage,immune = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
-        table_x_elt.append(advantage)
-        table_x_elt.append(immune)"""
-        damageMultiplier = typeBattle(int(train_x[i][0]),int(train_x[i][1]))
+        damageMultiplier = typeBattle(train_x[i][0],train_x[i][1])
         table_x_elt.append(damageMultiplier)
 
         #Récupération des données des pokémons via la table pokémon
-        pokemon1 = pokemon[int(train_x[i][0])]
-        pokemon2 = pokemon[int(train_x[i][1])]
+        pokemon1 = pokemon[train_x[i][0]]
+        pokemon2 = pokemon[train_x[i][1]]
 
         #Tableaux des stats des pokémons
-        statsp1 = getBaseStats(pokemon1)
-        statsp2 = getBaseStats(pokemon2)
+        statsP1 = getBaseStats(pokemon1)
+        statsP2 = getBaseStats(pokemon2)
 
         #On compare les statistiques et la somme des statistiques des pokemon entre eux
         #True si les stats du pkm1 sont supérieur au pkm2
-        for j in range (len(statsp1)):
-            table_x_elt.append(statsp1[j] > statsp2[j])
-        table_x_elt.append(statsp1[5])
-        table_x_elt.append(statsp2[5])
-        table_x_elt.append(sumInTable(statsp1))
-        table_x_elt.append(sumInTable(statsp2))
+        for j in range (len(statsP1)):
+            table_x_elt.append(statsP1[j])
+            table_x_elt.append(statsP2[j])
+            table_x_elt.append(statsP1[j] > statsP2[j])
 
-        """# attaque1 > defense2
-        table_x_elt.append(statsp1[1] > statsp2[2])
-        #attaque2 < defense1
-        table_x_elt.append(statsp2[1] < statsp1[2])
-        #attaqueSp1 > defenseSpe2
-        table_x_elt.append(statsp1[3] > statsp2[4])
-        #attaqueSpe2 < defenseSpe1
-        table_x_elt.append(statsp2[3] < statsp1[4])"""
+        sumStatsP1 = sumInTable(statsP1)
+        sumStatsP2 = sumInTable(statsP2)   
+        table_x_elt.append(sumStatsP1)
+        table_x_elt.append(sumStatsP2)
+        table_x_elt.append(sumStatsP1 > sumStatsP2)
+
         winRatepkm1 = pokemon1[-1]
         winRatepkm2 = pokemon2[-1]
         table_x_elt.append(winRatepkm1)
@@ -375,11 +312,12 @@ train_x,train_y = tableDecision(train_raw_x,train_raw_y)
 #train_y est un tableau de boolean contenant les resultats du test
 test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
+#Random Forest:
+clf = RandomForestClassifier(n_estimators=250)
+clf.fit(train_x,train_y)
 
 #Fonction pour l'arbre de décision
-def eval_DecisionTreeClassifier(train_x,train_y,X,y,k):
-    clf = RandomForestClassifier(n_estimators=250, criterion="entropy")
-    clf.fit(train_x,train_y)
+def eval_Random_Forest(train_x,train_y,X,y,k):
     return clf.score(X,y)
 
 
@@ -393,12 +331,6 @@ def eval_pokemon_battle_prediction(test_x,test_y,classifier):
     return count/len(test_x)
 
 
-#Fonction de test simple
-#test_eval_pokemon_battle Decision ==> 0.4592106316547914
-def test_eval_pokemon_battle():
-    return eval_pokemon_battle_prediction(test_x,test_y,lambda x : eval_DecisionTreeClassifier(train_x,train_y,x))
-
-
 ##Retourne le pourcentage d'erreur avec la méthode KFold
 def test_cross_validation_pokemon_battle(k):
     total = 0   #nombre total d'apprentissage
@@ -409,20 +341,9 @@ def test_cross_validation_pokemon_battle(k):
     for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         Y_train, Y_test = Y[train_index], Y[test_index]
-        meanSum += round(eval_DecisionTreeClassifier(X_train,Y_train,X_test,Y_test,k) * 100,2)
+        meanSum += round(eval_Random_Forest(X_train,Y_train,X_test,Y_test,k) * 100,2)
         total+=1
     return meanSum/total
-
-def sampled_range(mini, maxi, num):
-  if not num:
-    return []
-  lmini = math.log(mini)
-  lmaxi = math.log(maxi)
-  ldelta = (lmaxi - lmini) / (num - 1)
-  out = [x for x in set([int(math.exp(lmini + i * ldelta)) for i in range(num)])]
-  out.sort()
-  return out
-
 
 def test_find_best_k():
     k = [100,150,200,250,300,350,400] #On pioche 10 valeurs entre 1 et len(train_x)
