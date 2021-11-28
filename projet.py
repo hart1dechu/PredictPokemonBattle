@@ -1,13 +1,10 @@
 import csv
 import math
-from functools import reduce
-import operator
-from numpy import sqrt, true_divide
 import random
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
 
 typeTable = {
     "Steel" : {
@@ -301,7 +298,7 @@ def tableDecision(train_x,train_y):
         table_y.append(train_y[i])
         table_x.append(table_x_elt)
 
-    return table_x,table_y
+    return table_x,train_y
 
 
 #train_x est un tableau de tableau de boolean contenant les caractéristiques du combats de l'apprentissage
@@ -313,11 +310,12 @@ train_x,train_y = tableDecision(train_raw_x,train_raw_y)
 test_x,test_y = tableDecision(test_raw_x,test_raw_y)
 
 #Random Forest:
-clf = RandomForestClassifier(n_estimators=250)
-clf.fit(train_x,train_y)
+
 
 #Fonction pour l'arbre de décision
 def eval_Random_Forest(train_x,train_y,X,y,k):
+    clf = RandomForestClassifier(n_estimators=250)
+    clf.fit(train_x,train_y)
     return clf.score(X,y)
 
 
