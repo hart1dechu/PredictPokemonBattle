@@ -180,6 +180,7 @@ def read_data_pokemon(filename):
 
 #Tableau pokemon contenant les caractéristiques des pokémons
 pokemon = read_data_pokemon('pokemon.csv')
+pokemon[63][0] = 'Primeape'  
 def getPokemonName(pkm):
     return pokemon[pkm][0]
 
@@ -188,7 +189,7 @@ def getPokemonName(pkm):
 # 0.5, si le type1 est pas efficace sur le type2
 # 0.0, si le type2 est immunisé contre le type1
 # 1.0, sinon
-def istypeEffective (type1,type2):
+def isTypeEffective (type1,type2):
     type = typeTable[type1]
     if type2 in type["x2"]:
         return 2.0
@@ -203,18 +204,16 @@ def istypeEffective (type1,type2):
 # Permet de savoir si le type à un avantage par rapport aux types adverse
 #typeAttack est un type, tandis que typeDefense est un tableau de type
 #Retourne le damageMultiplier
-def isTypeAdvantage(typeAttack,typeDefense):
-    damageMultiplier = 1.0 * istypeEffective(typeAttack,typeDefense[0])
-    damageMultiplier = damageMultiplier * (istypeEffective(typeAttack,typeDefense[1]) if (len(typeDefense) == 2) & (typeDefense[1] != '') else 1)
-    return damageMultiplier
+def singleTypeAdvantage(typeAttack,typeDefense):
+    return 1.0 * isTypeEffective(typeAttack,typeDefense[0]) * (isTypeEffective(typeAttack,typeDefense[1]) if typeDefense[1] != '' else 1.0)
 
 
 #Permet de savoir si le type d'un pokemon est avantagé ou immunisé face au type d'un autre pokemon
 #type1 et type2 sont des tableaux de type de pokemon
 #return isAdvantaged, isImmune
 def doubleTypeAdvantage(type1,type2):
-    advantage1= isTypeAdvantage(type1[0],type2)
-    advantage2= isTypeAdvantage(type1[1],type2) if (len(type1) > 1) & (type1[1] != '') else 0
+    advantage1= singleTypeAdvantage(type1[0],type2)
+    advantage2= singleTypeAdvantage(type1[1],type2) if (len(type1) > 1) & (type1[1] != '') else 0
     result = max(advantage1,advantage2)
     return result
 
